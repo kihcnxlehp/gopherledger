@@ -211,6 +211,7 @@ func (s *Store) Withdraw(userID int64, orderNumber string, sum float64) error {
 	}
 
 	balance.Current -= sum
+	balance.Withdrawn -= sum
 
 	withdrawal := &domain.Withdrawal{
 		ID:          s.nextID,
