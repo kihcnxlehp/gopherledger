@@ -229,6 +229,24 @@ func (s *Service) StartAccrualWorker(ctx context.Context) {
 	}
 }
 
+// tryMarkProcessing пытается пометить заказ как обрабатываемый.
+// Возвращает true, если удалось (заказ не был в обработке).
+// Возвращает false, если заказ уже обрабатывается.
+// Операция атомарна - проверка и установка происходят под одним мьютексом.
+func (s *Service) tryMarkProcessing(orderNumber string) bool {
+	s.processingMu.Lock()
+	defer s.processingMu.Unlock()
+
+	// Проверяем, не обрабатывается ли уже
+	if s.processingOrders[orderNumber] {
+		return false
+	}
+
+	// Помечаем как обрабатываемый
+	s.processingOrders[orderNumber] = true
+	return true
+}
+
 // processAllPendingOrders получает заказы для обработки и запускает горутины.
 // Реализуйте самостоятельно.
 func (s *Service) processAllPendingOrders(ctx context.Context) {
@@ -242,10 +260,9 @@ func (s *Service) processAllPendingOrders(ctx context.Context) {
 	g.SetLimit(s.workerConcurrency)
 
 	for _, order := range orders {
-		if s.isProcessing(order.Number) {
+		if !s.tryMarkProcessing(order.Number) {
 			continue
 		}
-		s.markProcessing(order.Number)
 
 		orderNum := order.Number
 		g.Go(func() error {
