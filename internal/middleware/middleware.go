@@ -1,5 +1,4 @@
 // Пакет middleware содержит HTTP-middleware.
-// Реализуйте Auth, Logging и Recover самостоятельно.
 package middleware
 
 import (
@@ -15,12 +14,6 @@ import (
 
 // Auth проверяет токен из заголовка Authorization и помещает ID пользователя в контекст.
 // Запросы без валидного токена получают ответ 401 Unauthorized.
-//
-// Что нужно сделать:
-//   - прочитать токен из заголовка
-//   - проверить токен через пакет auth
-//   - поместить ID пользователя в контекст запроса
-//   - передать управление следующему handler или вернуть 401
 func Auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
@@ -42,18 +35,12 @@ func Auth(next http.Handler) http.Handler {
 }
 
 // statusRecorder оборачивает http.ResponseWriter для перехвата статус-кода.
-// Используйте эту структуру в Logging.
 type statusRecorder struct {
 	http.ResponseWriter
 	status int
 }
 
 // Logging логирует метод, путь, статус ответа и время выполнения каждого запроса.
-//
-// Что нужно сделать:
-//   - зафиксировать время начала запроса
-//   - обернуть w в statusRecorder для перехвата статус-кода
-//   - после выполнения handler записать лог
 func Logging(next http.Handler, logLevel string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -75,10 +62,6 @@ func Logging(next http.Handler, logLevel string) http.Handler {
 
 // Recover перехватывает панику внутри handler, логирует её и возвращает
 // клиенту ответ 500 Internal Server Error вместо того, чтобы уронить сервер.
-//
-// Что нужно сделать:
-//   - добавить defer с вызовом recover()
-//   - если паника произошла, залогировать её и отдать 500
 func Recover(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
@@ -90,9 +73,7 @@ func Recover(next http.Handler) http.Handler {
 	})
 }
 
-// ---------------------------------------------------------------------------
 // Вспомогательные функции для ответов
-// ---------------------------------------------------------------------------
 
 type ErrorResponse struct {
 	Code    string `json:"code"`
@@ -101,7 +82,6 @@ type ErrorResponse struct {
 
 // writeError записывает JSON-ответ с ошибкой.
 // Клиент видит только userMsg. Внутренние детали пишутся только в лог.
-// Прочитайте ТЗ и создайте структуру тела ответа самостоятельно.
 func writeError(w http.ResponseWriter, status int, code, userMsg string, internalErr error) {
 	if internalErr != nil {
 		log.Printf("ошибка code=%s status=%d: %v", code, status, internalErr)

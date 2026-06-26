@@ -1,7 +1,4 @@
 // Пакет service содержит бизнес-логику приложения.
-//
-// Взаимодействие с хранилищем осуществляется через интерфейс.
-// Определите этот интерфейс здесь, по месту использования.
 package service
 
 import (
@@ -17,9 +14,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/sync/errgroup"
 )
-
-// Service реализует бизнес-логику приложения.
-// Замените поле repo в структуре на свой интерфейс.
 
 type Repository interface {
 	CreateUser(login, passwordHash string) (*domain.User, error)
@@ -39,8 +33,6 @@ type Repository interface {
 	GetTotalWithdrawn() float64
 }
 
-// processingOrders хранит номера заказов, которые сейчас обрабатываются воркером.
-// Защитите конкурентный доступ к этому полю самостоятельно.
 type Service struct {
 	repo Repository
 
@@ -51,7 +43,6 @@ type Service struct {
 	workerConcurrency int
 }
 
-// New создаёт Service.
 func New(repo Repository, interval time.Duration, concurrency int) *Service {
 	return &Service{
 		repo:              repo,
@@ -61,12 +52,9 @@ func New(repo Repository, interval time.Duration, concurrency int) *Service {
 	}
 }
 
-// ---------------------------------------------------------------------------
-// Методы бизнес-логики - реализуйте самостоятельно
-// ---------------------------------------------------------------------------
+// Методы бизнес-логики
 
 // RegisterUser регистрирует нового пользователя и возвращает токен аутентификации.
-// Хешируйте пароль перед сохранением с помощью crypto/sha256.
 func (s *Service) RegisterUser(login, password string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -147,7 +135,6 @@ func (s *Service) GetWithdrawals(userID int64) ([]domain.Withdrawal, error) {
 }
 
 // validateLuhn проверяет контрольную сумму номера заказа по алгоритму Луна.
-// Вызывается при загрузке заказа и при списании баллов.
 func validateLuhn(number string) bool {
 	var sum int
 	var double bool
@@ -203,16 +190,6 @@ func (s *Service) GetSystemStats() (*domain.SystemStats, error) {
 	return stats, nil
 }
 
-// ---------------------------------------------------------------------------
-// Воркер начислений
-//
-// StartAccrualWorker предоставлен. Реализуйте processAllPendingOrders
-// и processOrder самостоятельно.
-//
-// Это самая интересная часть проекта: конкурентная обработка заказов.
-// Подумайте, как защитить доступ к processingOrders из нескольких горутин.
-// ---------------------------------------------------------------------------
-
 // StartAccrualWorker запускает фоновый цикл, который каждые 3 секунды
 // передаёт необработанные заказы в processAllPendingOrders.
 // Останавливается при отмене ctx.
@@ -233,7 +210,6 @@ func (s *Service) StartAccrualWorker(ctx context.Context) {
 // tryMarkProcessing пытается пометить заказ как обрабатываемый.
 // Возвращает true, если удалось (заказ не был в обработке).
 // Возвращает false, если заказ уже обрабатывается.
-// Операция атомарна - проверка и установка происходят под одним мьютексом.
 func (s *Service) tryMarkProcessing(orderNumber string) bool {
 	s.processingMu.Lock()
 	defer s.processingMu.Unlock()
@@ -249,7 +225,6 @@ func (s *Service) tryMarkProcessing(orderNumber string) bool {
 }
 
 // processAllPendingOrders получает заказы для обработки и запускает горутины.
-// Реализуйте самостоятельно.
 func (s *Service) processAllPendingOrders(ctx context.Context) {
 	orders, err := s.repo.GetOrdersForProcessing()
 	if err != nil {
@@ -278,8 +253,7 @@ func (s *Service) processAllPendingOrders(ctx context.Context) {
 	}
 }
 
-// processOrder обрабатывает один заказ. Реализуйте самостоятельно.
-// Используйте вспомогательные функции ниже для генерации случайных значений.
+// processOrder обрабатывает один заказ.
 func (s *Service) processOrder(ctx context.Context, number string) {
 	if err := s.repo.UpdateOrderStatus(number, domain.OrderStatusProcessing, 0); err != nil {
 		log.Printf("воркер: ошибка обновления заказа %s: %v", number, err)
@@ -332,9 +306,7 @@ func (s *Service) unmarkProcessing(orderNumber string) {
 	delete(s.processingOrders, orderNumber)
 }
 
-// ---------------------------------------------------------------------------
-// Вспомогательные функции - предоставлены
-// ---------------------------------------------------------------------------
+// Вспомогательные функции
 
 // randomAccrual возвращает случайное начисление от 10 до 500 баллов.
 func randomAccrual() float64 {

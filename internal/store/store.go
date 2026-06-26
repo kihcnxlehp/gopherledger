@@ -1,6 +1,4 @@
 // Пакет store реализует хранилище данных в памяти.
-// Используйте отдельные мьютексы для независимых групп данных.
-// Реализуйте этот пакет самостоятельно.
 package store
 
 import (
@@ -12,7 +10,6 @@ import (
 )
 
 // Store хранит все данные приложения в памяти.
-// Добавьте средства защиты конкурентного доступа самостоятельно.
 type Store struct {
 	usersMu      sync.RWMutex
 	users        map[int64]*domain.User
@@ -30,7 +27,6 @@ type Store struct {
 	nextID int64
 }
 
-// New создаёт и возвращает новое пустое хранилище.
 func New() *Store {
 	return &Store{
 		users:        make(map[int64]*domain.User),
