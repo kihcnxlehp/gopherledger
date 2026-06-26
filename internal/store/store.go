@@ -4,7 +4,6 @@
 package store
 
 import (
-	"fmt"
 	"gopherledger/internal/domain"
 	"sort"
 	"sync"
@@ -162,7 +161,7 @@ func (s *Store) UpdateOrderStatus(number, status string, accrual float64) error 
 
 	order, ok := s.orders[number]
 	if !ok {
-		return fmt.Errorf("заказ %s не найден", number) //
+		return domain.ErrOrderNotFound
 	}
 
 	order.Status = status

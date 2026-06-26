@@ -17,6 +17,7 @@ var (
 	ErrInvalidPassword   = errors.New("неверный пароль")
 	ErrOrderExists       = errors.New("заказ уже загружен другим пользователем")
 	ErrOrderOwnedByUser  = errors.New("заказ уже загружен этим пользователем")
+	ErrOrderNotFound     = errors.New("заказ не найден")
 	ErrInsufficientFunds = errors.New("недостаточно баллов")
 	ErrInvalidOrder      = errors.New("неверный номер заказа")
 )
