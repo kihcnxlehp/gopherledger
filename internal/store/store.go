@@ -118,7 +118,7 @@ func (s *Store) GetUserOrders(userID int64) ([]domain.Order, error) {
 	s.ordersMu.RLock()
 	defer s.ordersMu.RUnlock()
 
-	userOrders := make([]domain.Order, 0)
+	userOrders := make([]domain.Order, 0, 10)
 
 	for _, order := range s.orders {
 		if order.UserID == userID {
@@ -231,7 +231,9 @@ func (s *Store) GetWithdrawals(userID int64) ([]domain.Withdrawal, error) {
 	s.withdrawalsMu.RLock()
 	defer s.withdrawalsMu.RUnlock()
 
-	withdrawals := make([]domain.Withdrawal, 0)
+	userWithdrawals := s.withdrawals[userID]
+
+	withdrawals := make([]domain.Withdrawal, 0, len(userWithdrawals))
 
 	for _, withdrawal := range s.withdrawals[userID] {
 		withdrawals = append(withdrawals, *withdrawal)
