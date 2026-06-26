@@ -387,10 +387,17 @@ func (h *Handler) ExportStats(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(&buf, "withdrawn_total: %.2f\n", stats.WithdrawnTotal)
 	fmt.Fprintf(&buf, "generated_at: %s\n", time.Now().Format(time.RFC3339))
 
-	err = os.WriteFile("stats.txt", []byte(buf.String()), 0644)
-	if err != nil {
+	const targetFile = "stats.txt"
+	const tmpFile = targetFile + ".tmp"
+
+	if err = os.WriteFile(tmpFile, []byte(buf.String()), 0644); err != nil {
 		writeError(w, http.StatusInternalServerError, "file_error", "не удалось записать файл", err)
 		return
+	}
+
+	if err = os.Rename(tmpFile, targetFile); err != nil {
+		os.Remove(tmpFile)
+		writeError(w, http.StatusInternalServerError, "file_error", "не удалось обновить файл статистики", err)
 	}
 
 	w.WriteHeader(http.StatusOK)
