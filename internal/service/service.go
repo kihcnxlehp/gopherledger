@@ -6,8 +6,6 @@ package service
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"log"
 	"math/rand"
 	"sync"
@@ -16,6 +14,7 @@ import (
 	"gopherledger/internal/auth"
 	"gopherledger/internal/domain"
 
+	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -69,8 +68,12 @@ func New(repo Repository, interval time.Duration, concurrency int) *Service {
 // RegisterUser регистрирует нового пользователя и возвращает токен аутентификации.
 // Хешируйте пароль перед сохранением с помощью crypto/sha256.
 func (s *Service) RegisterUser(login, password string) (string, error) {
-	hash := sha256.Sum256([]byte(password))
-	passwordHash := hex.EncodeToString(hash[:])
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+
+	passwordHash := string(hash)
 
 	user, err := s.repo.CreateUser(login, passwordHash)
 	if err != nil {
@@ -91,10 +94,8 @@ func (s *Service) LoginUser(login, password string) (string, error) {
 		return "", err
 	}
 
-	hash := sha256.Sum256([]byte(password))
-	passwordHash := hex.EncodeToString(hash[:])
-
-	if passwordHash != user.PasswordHash {
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
+	if err != nil {
 		return "", domain.ErrInvalidPassword
 	}
 
