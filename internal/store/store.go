@@ -7,6 +7,7 @@ import (
 	"gopherledger/internal/domain"
 	"sort"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -26,8 +27,7 @@ type Store struct {
 	withdrawalsMu sync.RWMutex
 	withdrawals   map[int64][]*domain.Withdrawal
 
-	nextIDMu sync.Mutex
-	nextID   int64
+	nextID int64
 }
 
 // New создаёт и возвращает новое пустое хранилище.
@@ -46,17 +46,17 @@ func New() *Store {
 // Возвращает domain.ErrUserExists если логин уже занят.
 func (s *Store) CreateUser(login, passwordHash string) (*domain.User, error) {
 	s.usersMu.Lock()
-	s.nextIDMu.Lock()
 
-	defer s.nextIDMu.Unlock()
 	defer s.usersMu.Unlock()
 
 	if _, ok := s.usersByLogin[login]; ok {
 		return nil, domain.ErrUserExists
 	}
 
+	newID := atomic.AddInt64(&s.nextID, 1) - 1
+
 	newUser := &domain.User{
-		ID:           s.nextID,
+		ID:           newID,
 		Login:        login,
 		PasswordHash: passwordHash,
 	}
@@ -86,9 +86,7 @@ func (s *Store) GetUserByLogin(login string) (*domain.User, error) {
 // Возвращает domain.ErrOrderExists если номер принадлежит другому пользователю.
 func (s *Store) CreateOrder(userID int64, number string) (*domain.Order, error) {
 	s.ordersMu.Lock()
-	s.nextIDMu.Lock()
 
-	defer s.nextIDMu.Unlock()
 	defer s.ordersMu.Unlock()
 
 	if order, ok := s.orders[number]; ok {
@@ -98,8 +96,10 @@ func (s *Store) CreateOrder(userID int64, number string) (*domain.Order, error) 
 		return nil, domain.ErrOrderExists
 	}
 
+	newID := atomic.AddInt64(&s.nextID, 1) - 1
+
 	order := &domain.Order{
-		ID:         s.nextID,
+		ID:         newID,
 		UserID:     userID,
 		Number:     number,
 		Status:     domain.OrderStatusNew,
@@ -198,9 +198,7 @@ func (s *Store) GetBalance(userID int64) (domain.Balance, error) {
 func (s *Store) Withdraw(userID int64, orderNumber string, sum float64) error {
 	s.balanceMu.Lock()
 	s.withdrawalsMu.Lock()
-	s.nextIDMu.Lock()
 
-	defer s.nextIDMu.Unlock()
 	defer s.withdrawalsMu.Unlock()
 	defer s.balanceMu.Unlock()
 
@@ -212,8 +210,10 @@ func (s *Store) Withdraw(userID int64, orderNumber string, sum float64) error {
 	balance.Current -= sum
 	balance.Withdrawn -= sum
 
+	newID := atomic.AddInt64(&s.nextID, 1) - 1
+
 	withdrawal := &domain.Withdrawal{
-		ID:          s.nextID,
+		ID:          newID,
 		UserID:      userID,
 		OrderNumber: orderNumber,
 		Sum:         sum,
