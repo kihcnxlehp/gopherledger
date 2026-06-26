@@ -13,6 +13,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"gopherledger/internal/auth"
 	"gopherledger/internal/config"
 	"gopherledger/internal/handler"
 	"gopherledger/internal/router"
@@ -31,6 +32,9 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("загрузка конфига: %w", err)
 	}
+
+	auth.SetSecretKey("my-secret-key")
+	auth.SetTokenTTL(24 * time.Hour)
 
 	repo := store.New()
 
@@ -68,7 +72,7 @@ func gracefulShutdown(addr string, cancel context.CancelFunc, handler http.Handl
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(quit)
-	
+
 	<-quit
 	log.Println("получен сигнал завершения, останавливаем сервер...")
 

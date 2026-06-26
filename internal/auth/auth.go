@@ -8,49 +8,68 @@
 package auth
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"errors"
-	"sync"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
-// ErrInvalidToken возвращается, если токен не найден или недействителен.
-var ErrInvalidToken = errors.New("недействительный токен")
+var (
+	ErrInvalidToken = errors.New("недействительный токен")
+	jwtSecret       = []byte("your-secret-key")
+	tokenTTL        = 24 * time.Hour
+)
 
-type TokenStore struct {
-	mu     sync.RWMutex
-	tokens map[string]int64
+type Claims struct {
+	UserID int64 `json:"user_id"`
+	jwt.RegisteredClaims
 }
-
-var globalStore = &TokenStore{tokens: make(map[string]int64)}
 
 // GenerateToken создаёт новый токен для пользователя с указанным ID
 // и сохраняет связь токен -> userID внутри пакета.
 func GenerateToken(userID int64) (string, error) {
-	bytes := make([]byte, 32)
-	if _, err := rand.Read(bytes); err != nil {
+	claims := Claims{
+		UserID: userID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenTTL)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(jwtSecret)
+
+	if err != nil {
 		return "", err
 	}
-	token := hex.EncodeToString(bytes)
 
-	globalStore.mu.Lock()
-	defer globalStore.mu.Unlock()
-
-	globalStore.tokens[token] = userID
-
-	return token, nil
+	return tokenString, nil
 }
 
 // ValidateToken проверяет токен и возвращает ID пользователя.
 // Возвращает ErrInvalidToken если токен не найден.
-func ValidateToken(token string) (int64, error) {
-	globalStore.mu.RLock()
-	defer globalStore.mu.RUnlock()
+func ValidateToken(tokenString string) (int64, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		return jwtSecret, nil
+	})
 
-	userID, ok := globalStore.tokens[token]
+	if err != nil || !token.Valid {
+		return 0, ErrInvalidToken
+	}
 
+	claims, ok := token.Claims.(*Claims)
 	if !ok {
 		return 0, ErrInvalidToken
 	}
-	return userID, nil
+
+	return claims.UserID, nil
+}
+
+func SetSecretKey(secret string) {
+	jwtSecret = []byte(secret)
+}
+
+func SetTokenTTL(ttl time.Duration) {
+	tokenTTL = ttl
 }
