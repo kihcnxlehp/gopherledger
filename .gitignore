@@ -1,0 +1,67 @@
+# =========================
+# Compiled binary
+# =========================
+gopherledger
+gopherledger.exe
+/bin/
+/build/
+
+# =========================
+# IDEs and editors
+# =========================
+# GoLand / IntelliJ
+.idea/
+*.iml
+
+# VS Code
+.vscode/
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# =========================
+# OS specific
+# =========================
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+
+# =========================
+# Project specific
+# =========================
+stats.txt
+stats.txt.tmp
+*.tmp
+
+# =========================
+# Configuration
+# =========================
+config.yaml
+config.yml
+config.local.yaml
+
+.env
+.env.local
+.env.*.local
+
+# =========================
+# Tests and coverage
+# =========================
+*.test
+*.out
+*.prof
+coverage.html
+coverage.out
+
+# =========================
+# Logs
+# =========================
+*.log
+/logs/
