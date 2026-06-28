@@ -396,3 +396,8 @@ func UserIDFromContext(ctx context.Context) (int64, bool) {
 	userID, ok := ctx.Value(CtxKeyUserID).(int64)
 	return userID, ok
 }
+
+// WithUserID добавляет userID в контекст (для тестирования).
+func WithUserID(ctx context.Context, userID int64) context.Context {
+	return context.WithValue(ctx, CtxKeyUserID, userID)
+}
