@@ -1,4 +1,4 @@
-package service_test
+package service
 
 import (
 	"errors"
@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"gopherledger/internal/domain"
-	"gopherledger/internal/service"
 )
 
 // ---------------------------------------------------------------------------
@@ -186,7 +185,7 @@ func TestRegisterUser(t *testing.T) {
 				repo.CreateUser("bob", "hash")
 			}
 
-			svc := service.New(repo, time.Second, 5)
+			svc := New(repo, time.Second, 5)
 
 			token, err := svc.RegisterUser(tt.login, tt.password)
 
@@ -204,12 +203,55 @@ func TestRegisterUser(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
+// Тесты LoginUser
+// ---------------------------------------------------------------------------
+
+func TestLoginUser_Success(t *testing.T) {
+	repo := newMockRepo()
+	svc := New(repo, time.Second, 5)
+
+	// Сначала регистрируем
+	svc.RegisterUser("alice", "secret123")
+
+	// Логинимся с правильным паролем
+	token, err := svc.LoginUser("alice", "secret123")
+	if err != nil {
+		t.Fatalf("LoginUser failed: %v", err)
+	}
+	if token == "" {
+		t.Error("expected non-empty token")
+	}
+}
+
+func TestLoginUser_WrongPassword(t *testing.T) {
+	repo := newMockRepo()
+	svc := New(repo, time.Second, 5)
+
+	svc.RegisterUser("alice", "secret123")
+
+	_, err := svc.LoginUser("alice", "wrongpassword")
+	if !errors.Is(err, domain.ErrInvalidPassword) {
+		t.Errorf("expected ErrInvalidPassword, got: %v", err)
+	}
+}
+
+func TestLoginUser_UserNotFound(t *testing.T) {
+	repo := newMockRepo()
+	svc := New(repo, time.Second, 5)
+
+	_, err := svc.LoginUser("nonexistent", "password")
+	if !errors.Is(err, domain.ErrUserNotFound) {
+		t.Errorf("expected ErrUserNotFound, got: %v", err)
+	}
+}
+
+// ---------------------------------------------------------------------------
 // Тесты CreateOrder с валидацией Луна
 // ---------------------------------------------------------------------------
 
 func TestCreateOrder_InvalidLuhn(t *testing.T) {
 	repo := newMockRepo()
-	svc := service.New(repo, time.Second, 5)
+	svc := New(repo, time.Second, 5)
 
 	_, err := svc.CreateOrder(1, "12345") // невалидный номер
 	if !errors.Is(err, domain.ErrInvalidOrder) {
@@ -219,7 +261,7 @@ func TestCreateOrder_InvalidLuhn(t *testing.T) {
 
 func TestCreateOrder_ValidLuhn(t *testing.T) {
 	repo := newMockRepo()
-	svc := service.New(repo, time.Second, 5)
+	svc := New(repo, time.Second, 5)
 
 	// Номер, проходящий проверку Луна
 	order, err := svc.CreateOrder(1, "4111111111111111")
@@ -232,12 +274,156 @@ func TestCreateOrder_ValidLuhn(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
+// Тест GetUserOrders
+// ---------------------------------------------------------------------------
+
+func TestGetUserOrders_Success(t *testing.T) {
+	repo := newMockRepo()
+	svc := New(repo, time.Second, 5)
+
+	repo.orders["111111111111"] = &domain.Order{
+		Number: "111111111111", UserID: 1, Status: "NEW",
+	}
+	repo.orders["222222222222"] = &domain.Order{
+		Number: "222222222222", UserID: 1, Status: "PROCESSED", Accrual: 100,
+	}
+	repo.orders["333333333333"] = &domain.Order{
+		Number: "333333333333", UserID: 2, Status: "NEW", // Другой пользователь
+	}
+
+	orders, err := svc.GetUserOrders(1)
+	if err != nil {
+		t.Fatalf("GetUserOrders failed: %v", err)
+	}
+
+	if len(orders) != 2 {
+		t.Errorf("expected 2 orders, got %d", len(orders))
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Тест GetBalance
+// ---------------------------------------------------------------------------
+
+func TestGetBalance_Empty(t *testing.T) {
+	repo := newMockRepo()
+	svc := New(repo, time.Second, 5)
+
+	balance, err := svc.GetBalance(999)
+	if err != nil {
+		t.Fatalf("GetBalance failed: %v", err)
+	}
+
+	if balance.Current != 0 {
+		t.Errorf("expected balance 0, got %f", balance.Current)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Тесты Withdraw
+// ---------------------------------------------------------------------------
+
+func TestWithdraw_Success(t *testing.T) {
+	repo := newMockRepo()
+	svc := New(repo, time.Second, 5)
+
+	// Подготавливаем баланс через мок
+	repo.balances[1] = &domain.Balance{Current: 200}
+	repo.orders["4111111111111111"] = &domain.Order{Number: "4111111111111111", UserID: 1}
+
+	err := svc.Withdraw(1, "4111111111111111", 50)
+	if err != nil {
+		t.Fatalf("Withdraw failed: %v", err)
+	}
+
+	balance, _ := svc.GetBalance(1)
+	if balance.Current != 150 {
+		t.Errorf("expected balance 150, got %f", balance.Current)
+	}
+}
+
+func TestWithdraw_InvalidLuhn(t *testing.T) {
+	repo := newMockRepo()
+	svc := New(repo, time.Second, 5)
+
+	err := svc.Withdraw(1, "12345", 50)
+	if !errors.Is(err, domain.ErrInvalidOrder) {
+		t.Errorf("expected ErrInvalidOrder, got: %v", err)
+	}
+}
+
+func TestWithdraw_InsufficientFunds(t *testing.T) {
+	repo := newMockRepo()
+	svc := New(repo, time.Second, 5)
+
+	repo.balances[1] = &domain.Balance{Current: 10}
+	repo.orders["4111111111111111"] = &domain.Order{Number: "4111111111111111", UserID: 1}
+
+	err := svc.Withdraw(1, "4111111111111111", 50)
+	if !errors.Is(err, domain.ErrInsufficientFunds) {
+		t.Errorf("expected ErrInsufficientFunds, got: %v", err)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Тест GetWithdrawals
+// ---------------------------------------------------------------------------
+
+func TestGetWithdrawals_Success(t *testing.T) {
+	repo := newMockRepo()
+	svc := New(repo, time.Second, 5)
+
+	repo.balances[1] = &domain.Balance{Current: 200}
+	repo.orders["4111111111111111"] = &domain.Order{Number: "4111111111111111", UserID: 1}
+
+	svc.Withdraw(1, "4111111111111111", 50)
+	svc.Withdraw(1, "4111111111111111", 30)
+
+	withdrawals, err := svc.GetWithdrawals(1)
+	if err != nil {
+		t.Fatalf("GetWithdrawals failed: %v", err)
+	}
+
+	if len(withdrawals) != 2 {
+		t.Errorf("expected 2 withdrawals, got %d", len(withdrawals))
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Table-driven tests для validateLuhn
+// ---------------------------------------------------------------------------
+
+func TestValidateLuhn(t *testing.T) {
+	tests := []struct {
+		number string
+		want   bool
+	}{
+		{"4111111111111111", true}, // Visa test
+		{"5500000000000004", true}, // MasterCard test
+		{"12345678901237", true},
+		{"12345678901234", false},
+		{"12345", false},
+		{"", false},
+		{"abcdefghijklm", false},
+		{"000000000000", true}, // Все нули валидны по Луну
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.number, func(t *testing.T) {
+			if got := validateLuhn(tt.number); got != tt.want {
+				t.Errorf("validateLuhn(%q) = %v, want %v", tt.number, got, tt.want)
+			}
+		})
+	}
+}
+
+// ---------------------------------------------------------------------------
 // Тесты GetSystemStats
 // ---------------------------------------------------------------------------
 
 func TestGetSystemStats(t *testing.T) {
 	repo := newMockRepo()
-	svc := service.New(repo, time.Second, 5)
+	svc := New(repo, time.Second, 5)
 
 	// Регистрируем пользователя и создаём заказы
 	token, _ := svc.RegisterUser("alice", "pass")
