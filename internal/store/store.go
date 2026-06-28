@@ -204,7 +204,7 @@ func (s *Store) Withdraw(userID int64, orderNumber string, sum float64) error {
 	}
 
 	balance.Current -= sum
-	balance.Withdrawn -= sum
+	balance.Withdrawn += sum
 
 	newID := atomic.AddInt64(&s.nextID, 1) - 1
 
