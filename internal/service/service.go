@@ -136,6 +136,10 @@ func (s *Service) GetWithdrawals(userID int64) ([]domain.Withdrawal, error) {
 
 // validateLuhn проверяет контрольную сумму номера заказа по алгоритму Луна.
 func validateLuhn(number string) bool {
+	if len(number) == 0 {
+		return false
+	}
+
 	var sum int
 	var double bool
 
