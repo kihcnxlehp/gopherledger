@@ -40,7 +40,7 @@ The project is built following **Clean Architecture** principles with clear laye
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                     HTTP Layer                           │
-│  router → middleware (Auth, Logging, Recover, RateLimit) │
+│  router → middleware (Auth, Logging, Recover)            │
 │         → handler                                        │
 └───────────────────────┬─────────────────────────────────┘
                         │ Service interface
