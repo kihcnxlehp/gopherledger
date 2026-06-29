@@ -74,7 +74,7 @@ gopherledger/
 │   ├── config/            # YAML configuration loading
 │   ├── domain/            # Business models and sentinel errors
 │   ├── handler/           # HTTP handlers
-│   ├── middleware/        # Auth, Logging, Recover, RateLimit
+│   ├── middleware/        # Auth, Logging, Recover
 │   ├── router/            # Route registration
 │   ├── service/           # Business logic and accrual worker
 │   └── store/             # In-memory repository
