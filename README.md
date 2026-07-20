@@ -4,6 +4,7 @@ A loyalty system backend for an e-commerce platform, written in Go.
 Users register, upload order numbers, and earn reward points that can be redeemed for future purchases.
 
 ![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat&logo=go)
+![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=flat&logo=docker)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
 ---
@@ -25,6 +26,7 @@ Users register, upload order numbers, and earn reward points that can be redeeme
 | Technology | Purpose |
 |------------|---------|
 | **Go 1.22+** | Programming language |
+| **Docker** | Containerization |
 | **JWT** (`golang-jwt/jwt/v5`) | Stateless authentication |
 | **bcrypt** (`golang.org/x/crypto/bcrypt`) | Secure password hashing |
 | **errgroup** (`golang.org/x/sync/errgroup`) | Concurrent order processing |
@@ -135,8 +137,17 @@ worker_concurrency: 5
 
 ### 3. Run the server
 
+**Option A: Run locally**
+
 ```bash
 go run ./cmd/server
+```
+
+**Option B: Run with Docker**
+
+```bash
+docker build -t gopherledger .
+docker run -p 8080:8080 gopherledger
 ```
 
 The server will start at `http://localhost:8080`.
