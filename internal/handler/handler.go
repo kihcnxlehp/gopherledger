@@ -61,7 +61,7 @@ func writeError(w http.ResponseWriter, status int, code, userMsg string, interna
 		Message: userMsg,
 	}
 
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 // writeJSON записывает успешный JSON-ответ.
@@ -85,7 +85,7 @@ type registerRequest struct {
 // При дублировании логина: 409 Conflict.
 // При некорректных данных: 400 Bad Request.
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 
 	var req registerRequest
 	dec := json.NewDecoder(r.Body)
@@ -119,7 +119,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 // При успехе: 200 OK, заголовок Authorization с токеном.
 // При неверных данных: 401 Unauthorized.
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 
 	var req registerRequest
 	dec := json.NewDecoder(r.Body)
@@ -152,7 +152,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 // 409 Conflict  - заказ принадлежит другому пользователю.
 // 422 Unprocessable Entity - номер не прошёл проверку Луна.
 func (h *Handler) CreateOrder(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -272,7 +272,7 @@ func (h *Handler) Withdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 
 	var req withdrawRequest
 	dec := json.NewDecoder(r.Body)
@@ -377,7 +377,7 @@ func (h *Handler) ExportStats(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = os.Rename(tmpFile, targetFile); err != nil {
-		os.Remove(tmpFile)
+		_ = os.Remove(tmpFile)
 		writeError(w, http.StatusInternalServerError, "file_error", "не удалось обновить файл статистики", err)
 	}
 

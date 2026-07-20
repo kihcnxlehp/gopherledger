@@ -94,5 +94,5 @@ func writeError(w http.ResponseWriter, status int, code, userMsg string, interna
 		Message: userMsg,
 	}
 
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }

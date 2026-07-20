@@ -289,20 +289,6 @@ func (s *Service) processOrder(ctx context.Context, number string) {
 		number, status, accrual)
 }
 
-// isProcessing проверяет, обрабатывается ли заказ прямо сейчас
-func (s *Service) isProcessing(orderNumber string) bool {
-	s.processingMu.RLock()
-	defer s.processingMu.RUnlock()
-	return s.processingOrders[orderNumber]
-}
-
-// markProcessing помечает заказ как "в обработке"
-func (s *Service) markProcessing(orderNumber string) {
-	s.processingMu.Lock()
-	defer s.processingMu.Unlock()
-	s.processingOrders[orderNumber] = true
-}
-
 // unmarkProcessing снимает метку после завершения обработки
 func (s *Service) unmarkProcessing(orderNumber string) {
 	s.processingMu.Lock()
