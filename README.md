@@ -6,6 +6,7 @@ Users register, upload order numbers, and earn reward points that can be redeeme
 ![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat&logo=go)
 ![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=flat&logo=docker)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
+![CI](https://github.com/kihcnxlehp/gopherledger/actions/workflows/ci.yml/badge.svg)
 
 ---
 
