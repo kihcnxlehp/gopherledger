@@ -24,15 +24,15 @@ Users register, upload order numbers, and earn reward points that can be redeeme
 
 ## Tech Stack
 
-| Technology | Purpose |
-|------------|---------|
-| **Go 1.22+** | Programming language |
-| **Docker** | Containerization |
-| **JWT** (`golang-jwt/jwt/v5`) | Stateless authentication |
-| **bcrypt** (`golang.org/x/crypto/bcrypt`) | Secure password hashing |
+| Technology                                  | Purpose |
+|---------------------------------------------|---------|
+| **Go 1.25**                                 | Programming language |
+| **Docker**                                  | Containerization |
+| **JWT** (`golang-jwt/jwt/v5`)               | Stateless authentication |
+| **bcrypt** (`golang.org/x/crypto/bcrypt`)   | Secure password hashing |
 | **errgroup** (`golang.org/x/sync/errgroup`) | Concurrent order processing |
-| **YAML** (`gopkg.in/yaml.v3`) | Application configuration |
-| **In-memory store** | Thread-safe data storage |
+| **YAML** (`gopkg.in/yaml.v3`)               | Application configuration |
+| **In-memory store**                         | Thread-safe data storage |
 
 ---
 
